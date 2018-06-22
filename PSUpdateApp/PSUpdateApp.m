@@ -12,11 +12,48 @@ NSLocalizedStringFromTable(key, @"PSUdateApp", nil)
 #endif
 
 #import "PSUpdateApp.h"
-#import <AFNetworking/AFNetworking.h>
+
+#import <AFNetworking/AFHTTPSessionManager.h>
+#import <AFNetworking/AFURLResponseSerialization.h>
 
 #define APPLE_URL @"http://itunes.apple.com/lookup?"
 
 #define kCurrentAppVersion [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"]
+
+#ifdef DEBUG
+#define DebugLog(...) NSLog(__VA_ARGS__)
+#else
+#define DebugLog(...) { }
+#endif
+
+@interface NSObject (StringValidation)
+- (BOOL) isValidObject;
+- (BOOL) isValidString;
+@end
+
+@implementation NSObject (ObjectValidation)
+
+- (BOOL) isValidObject
+{
+    if ( self && ![self isEqual:[NSNull null]] && [self isKindOfClass:[NSObject class]] )
+        return YES;
+    else
+        return NO;
+}
+
+- (BOOL) isValidString
+{
+    if ( [self isValidObject] && [self isKindOfClass:[NSString class]] && ![(NSString *)self isEqualToString:@""] )
+        return YES;
+    else
+        return NO;
+}
+
+@end
+
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 @interface PSUpdateApp () <UIAlertViewDelegate> {
     NSString *_newVersion;
@@ -25,37 +62,40 @@ NSLocalizedStringFromTable(key, @"PSUdateApp", nil)
 
 @implementation PSUpdateApp
 
-CWL_SYNTHESIZE_SINGLETON_FOR_CLASS(PSUpdateApp)
-
-+ (id) startWithRoute:(NSString *)route
++ (PSUpdateApp *) manager
 {
-    return [[self alloc] initWithAppID:nil store:nil route:route];
-}
-
-+ (id) startWithAppID:(NSString *)appId store:(NSString *)store
-{
-    return [[self alloc] initWithAppID:appId store:store route:nil];
-}
-
-+ (id) startWithAppID:(NSString *)appId
-{
-    return [[self alloc] initWithAppID:appId store:nil route:nil];
-}
-
-- (id) initWithAppID:(NSString *)appId store:(NSString *)store route:(NSString *)route
-{
-    self = [super init];
+    static PSUpdateApp *sharedInstance = nil;
+    static dispatch_once_t oncePredicate;
     
-    if ( self ) {
-        [self setAppName:[[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleDisplayName"]];
-        [self setStrategy:DefaultStrategy];
-        [self setAppID:appId];
-        [self setAppStoreLocation: store ? store : [[NSLocale currentLocale] objectForKey: NSLocaleCountryCode]];
-        [self setDaysUntilPrompt:2];
-        [self setRoute:route];
-    }
-    
-    return self;
+    dispatch_once(&oncePredicate, ^{
+        sharedInstance = [[PSUpdateApp alloc] init];
+    });
+    return sharedInstance;
+}
+
+- (void) startWithRoute:(NSString *)route
+{
+    [self initWithAppID:nil store:nil route:route];
+}
+
+- (void) startWithAppID:(NSString *)appId store:(NSString *)store
+{
+    [self initWithAppID:appId store:store route:nil];
+}
+
+- (void) startWithAppID:(NSString *)appId
+{
+    [self initWithAppID:appId store:nil route:nil];
+}
+
+- (void) initWithAppID:(NSString *)appId store:(NSString *)store route:(NSString *)route
+{
+    [self setAppName:[[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleDisplayName"]];
+    [self setStrategy:DefaultStrategy];
+    [self setAppID:appId];
+    [self setAppStoreLocation: store ? store : [[NSLocale currentLocale] objectForKey: NSLocaleCountryCode]];
+    [self setDaysUntilPrompt:2];
+    [self setRoute:route];
 }
 
 - (void) detectAppVersion:(PSUpdateAppCompletionBlock)completionBlock
@@ -63,30 +103,29 @@ CWL_SYNTHESIZE_SINGLETON_FOR_CLASS(PSUpdateApp)
     if ( _strategy == RemindStrategy && [self remindDate] != nil && ![self checkConsecutiveDays] )
         return;
     
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[NSURL URLWithString:[self setJsonURL]]];
-    [request setHTTPMethod:@"GET"];
-    
-    AFJSONRequestOperation *operation = [AFJSONRequestOperation JSONRequestOperationWithRequest:request
-                                                                                        success:^(NSURLRequest *request, NSHTTPURLResponse *response, id JSON) {
-                                                                                            if ( [self isNewVersion:JSON] ) {
-                                                                                                if ( completionBlock && ![self isSkipVersion] ) {
-                                                                                                    completionBlock(nil, YES, JSON);
-                                                                                                } else if ( ![self isSkipVersion] ) {
-                                                                                                    [self showAlert];
-                                                                                                } else {
-                                                                                                    if ( completionBlock )
-                                                                                                        completionBlock(nil, NO, JSON);
-                                                                                                }
-                                                                                            } else {
-                                                                                                if ( completionBlock )
-                                                                                                    completionBlock(nil, NO, JSON);
-                                                                                            }
-                                                                                        }
-                                                                                        failure:^(NSURLRequest *request, NSHTTPURLResponse *response, NSError *error, id JSON) {
-                                                                                            if ( completionBlock && ![self isSkipVersion] )
-                                                                                                completionBlock(error, NO, nil);
-                                                                                        }];
-    [operation start];
+    AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
+    [manager setResponseSerializer:[AFJSONResponseSerializer serializer]];
+    [manager GET:[self setJsonURL] parameters:nil progress:nil
+         success:^(NSURLSessionTask *task, id responseObject) {
+             DebugLog(@"JSON response: %@", responseObject);
+             
+             if ( [self isNewVersion:responseObject] ) {
+                 BOOL skip = [self isSkipVersion];
+                 BOOL showAlert = YES;
+                 
+                 if ( completionBlock )
+                     showAlert = completionBlock(nil, YES, skip, responseObject);
+                 if ( showAlert && !skip )
+                     [self showAlert];
+             } else {
+                 if ( completionBlock )
+                     completionBlock(nil, NO, NO, responseObject);
+             }
+         }
+         failure:^(NSURLSessionDataTask * _Nullable task, NSError *error) {
+             if ( completionBlock )
+                 completionBlock(error, NO, NO, nil);
+         }];
 }
 
 - (NSString *) setJsonURL
@@ -103,13 +142,12 @@ CWL_SYNTHESIZE_SINGLETON_FOR_CLASS(PSUpdateApp)
 
 - (BOOL) isNewVersion:(NSDictionary *)dictionary
 {
-    if ( [[dictionary objectForKey:@"results"] count] > 0 ) {
-        _newVersion = [[[dictionary objectForKey:@"results"] objectAtIndex:0] objectForKey:@"version"];
-        [self setUpdatePageUrl:[[[dictionary objectForKey:@"results"] objectAtIndex:0] objectForKey:@"trackViewUrl"]];
+    if ( [dictionary[@"results"] count] > 0 ) {
+        _newVersion = dictionary[@"results"][0][@"version"];
+        [self setUpdatePageUrl:dictionary[@"results"][0][@"trackViewUrl"]];
         
-        if ([[[dictionary objectForKey:@"results"] objectAtIndex:0] objectForKey:@"type"]) {
-            [self setStrategy: [[[[dictionary objectForKey:@"results"] objectAtIndex:0] objectForKey:@"type"] isEqualToString:@"mandatory"] ? ForceStrategy : DefaultStrategy];
-        }
+        if ( dictionary[@"results"][0][@"type"] )
+            [self setStrategy: [dictionary[@"results"][0][@"type"] isEqualToString:@"mandatory"] ? ForceStrategy : DefaultStrategy];
         
         return [kCurrentAppVersion compare:_newVersion options:NSNumericSearch] == NSOrderedAscending;
     }
@@ -139,12 +177,14 @@ CWL_SYNTHESIZE_SINGLETON_FOR_CLASS(PSUpdateApp)
 
 - (void) showAlert
 {
+    NSString *alertTitle = [self.alertTitle isValidString] ? self.alertTitle : PSUdateAppLocalizedStrings(@"alert.success.title");
+    
     switch ( self.strategy ) {
         case DefaultStrategy:
         default:
         {
-            UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:PSUdateAppLocalizedStrings(@"alert.success.title")
-                                                                message:[NSString stringWithFormat:PSUdateAppLocalizedStrings(@"alert.success.default.text"), self.appName, _newVersion]
+            UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:alertTitle
+                                                                message:[self.alertDefaultMessage isValidString] ? self.alertDefaultMessage : [NSString stringWithFormat:PSUdateAppLocalizedStrings(@"alert.success.default.text"), self.appName, _newVersion]
                                                                delegate:self
                                                       cancelButtonTitle:PSUdateAppLocalizedStrings(@"alert.button.skip")
                                                       otherButtonTitles:PSUdateAppLocalizedStrings(@"alert.button.update"), nil];
@@ -154,8 +194,8 @@ CWL_SYNTHESIZE_SINGLETON_FOR_CLASS(PSUpdateApp)
             
         case ForceStrategy:
         {
-            UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:PSUdateAppLocalizedStrings(@"alert.success.title")
-                                                                message:[NSString stringWithFormat:PSUdateAppLocalizedStrings(@"alert.success.force.text"), self.appName, _newVersion]
+            UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:alertTitle
+                                                                message:[self.alertForceMessage isValidString] ? self.alertForceMessage : [NSString stringWithFormat:PSUdateAppLocalizedStrings(@"alert.success.force.text"), self.appName, _newVersion]
                                                                delegate:self
                                                       cancelButtonTitle:PSUdateAppLocalizedStrings(@"alert.button.update")
                                                       otherButtonTitles:nil, nil];
@@ -165,8 +205,8 @@ CWL_SYNTHESIZE_SINGLETON_FOR_CLASS(PSUpdateApp)
             
         case RemindStrategy:
         {
-            UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:PSUdateAppLocalizedStrings(@"alert.success.title")
-                                                                message:[NSString stringWithFormat:PSUdateAppLocalizedStrings(@"alert.success.remindme.text"), _appName, _newVersion]
+            UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:alertTitle
+                                                                message:[self.alertRemindMessage isValidString] ? self.alertRemindMessage : [NSString stringWithFormat:PSUdateAppLocalizedStrings(@"alert.success.remindme.text"), _appName, _newVersion]
                                                                delegate:self
                                                       cancelButtonTitle:PSUdateAppLocalizedStrings(@"alert.button.skip")
                                                       otherButtonTitles:PSUdateAppLocalizedStrings(@"alert.button.update"), PSUdateAppLocalizedStrings(@"alert.button.remindme"), nil];
@@ -204,11 +244,10 @@ CWL_SYNTHESIZE_SINGLETON_FOR_CLASS(PSUpdateApp)
             if ( buttonIndex == 0 ) {
                 [[NSUserDefaults standardUserDefaults] setObject:_newVersion forKey:@"skipVersion"];
                 [[NSUserDefaults standardUserDefaults] synchronize];
-            } else if ( buttonIndex == 1 ) {
+            } else if ( buttonIndex == 1 )
                 [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.updatePageUrl]];
-            } else {
+            else
                 [self setRemindDate:[NSDate date]];
-            }
         }
 
             break;
@@ -219,17 +258,17 @@ CWL_SYNTHESIZE_SINGLETON_FOR_CLASS(PSUpdateApp)
 
 - (BOOL) checkConsecutiveDays
 {
-    NSCalendar *gregorian = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+    NSCalendar *gregorian = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
     
     NSDate *today = [NSDate date];
     
     NSDate *dateToRound = [[self remindDate] earlierDate:today];
-    NSDateComponents * dateComponents = [gregorian components:NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit
+    NSDateComponents * dateComponents = [gregorian components:NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay
                                                      fromDate:dateToRound];
     
     NSDate *roundedDate = [gregorian dateFromComponents:dateComponents];
     NSDate *otherDate = (dateToRound == [self remindDate]) ? today : [self remindDate] ;
-    NSInteger diff = abs([roundedDate timeIntervalSinceDate:otherDate]);
+    NSInteger diff = (NSInteger)fabs([roundedDate timeIntervalSinceDate:otherDate]);
     NSInteger daysDifference = floor(diff/(24 * 60 * 60));
     
     return daysDifference >= _daysUntilPrompt;
