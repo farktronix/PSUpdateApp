@@ -11,7 +11,7 @@
 		9AA29E9C17E3B10A0084EB40 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9AA29E9B17E3B10A0084EB40 /* CoreGraphics.framework */; };
 		9AA29E9E17E3B10A0084EB40 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9AA29E9D17E3B10A0084EB40 /* UIKit.framework */; };
 		9AA29EA617E3B10A0084EB40 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 9AA29EA517E3B10A0084EB40 /* main.m */; };
-		9AA29EAA17E3B10A0084EB40 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 9AA29EA917E3B10A0084EB40 /* AppDelegate.m */; };
+		9AA29EAA17E3B10A0084EB40 /* PSUpdateAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 9AA29EA917E3B10A0084EB40 /* PSUpdateAppDelegate.m */; };
 		9AA29EAC17E3B10A0084EB40 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9AA29EAB17E3B10A0084EB40 /* Images.xcassets */; };
 		9AA29EB317E3B10A0084EB40 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9AA29EB217E3B10A0084EB40 /* XCTest.framework */; };
 		9AA29EB417E3B10A0084EB40 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9AA29E9917E3B10A0084EB40 /* Foundation.framework */; };
@@ -45,8 +45,8 @@
 		9AA29EA317E3B10A0084EB40 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		9AA29EA517E3B10A0084EB40 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		9AA29EA717E3B10A0084EB40 /* PSUpdateApp-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "PSUpdateApp-Prefix.pch"; sourceTree = "<group>"; };
-		9AA29EA817E3B10A0084EB40 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
-		9AA29EA917E3B10A0084EB40 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		9AA29EA817E3B10A0084EB40 /* PSUpdateAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PSUpdateAppDelegate.h; sourceTree = "<group>"; };
+		9AA29EA917E3B10A0084EB40 /* PSUpdateAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PSUpdateAppDelegate.m; sourceTree = "<group>"; };
 		9AA29EAB17E3B10A0084EB40 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		9AA29EB117E3B10A0084EB40 /* PSUpdateAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PSUpdateAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9AA29EB217E3B10A0084EB40 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
@@ -145,8 +145,8 @@
 		9AA29E9F17E3B10A0084EB40 /* Example */ = {
 			isa = PBXGroup;
 			children = (
-				9AA29EA817E3B10A0084EB40 /* AppDelegate.h */,
-				9AA29EA917E3B10A0084EB40 /* AppDelegate.m */,
+				9AA29EA817E3B10A0084EB40 /* PSUpdateAppDelegate.h */,
+				9AA29EA917E3B10A0084EB40 /* PSUpdateAppDelegate.m */,
 				9AA29EE017E3B5D00084EB40 /* MainViewController.h */,
 				9AA29EE117E3B5D00084EB40 /* MainViewController.m */,
 				9AA29EAB17E3B10A0084EB40 /* Images.xcassets */,
@@ -328,7 +328,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9AA29EAA17E3B10A0084EB40 /* AppDelegate.m in Sources */,
+				9AA29EAA17E3B10A0084EB40 /* PSUpdateAppDelegate.m in Sources */,
 				9AA29EA617E3B10A0084EB40 /* main.m in Sources */,
 				9AA29EDF17E3B41C0084EB40 /* PSUpdateApp.m in Sources */,
 				9AA29EE217E3B5D00084EB40 /* MainViewController.m in Sources */,

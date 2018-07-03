@@ -1,5 +1,5 @@
 //
-//  AppDelegate.h
+//  PSUpdateAppDelegate.h
 //  PSUpdateApp
 //
 //  Created by iBo on 9/13/13.
@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface AppDelegate : UIResponder <UIApplicationDelegate>
+@interface PSUpdateAppDelegate : UIResponder <UIApplicationDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
 

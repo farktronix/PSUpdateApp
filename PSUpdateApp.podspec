@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = 'PSUpdateApp'
-  s.version = '3.0'
+  s.version = '3.1'
   s.license = 'MIT'
   s.summary = 'PSUpdateApp is a simple method to notify users that a new version of your iOS app is available.'
   s.homepage = 'https://github.com/danielebogo/PSUpdateApp'

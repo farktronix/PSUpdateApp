@@ -1,19 +1,19 @@
 //
-//  AppDelegate.m
+//  PSUpdateAppDelegate.m
 //  PSUpdateApp
 //
 //  Created by iBo on 9/13/13.
 //  Copyright (c) 2013 iBo. All rights reserved.
 //
 
-#import "AppDelegate.h"
+#import "PSUpdateAppDelegate.h"
 #import "PSUpdateApp.h"
 
 #import "MainViewController.h"
 
 #define FAKE_ROUTE @"http://paperstreetsoapdesign.com/development/updateapp/fake_2.json"
 
-@implementation AppDelegate
+@implementation PSUpdateAppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
